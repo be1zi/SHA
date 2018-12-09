@@ -28,7 +28,7 @@ public class SHA {
         this.message = loadMessage();
         this.messageInBytes = basicChanges();
         make4BytesParts();
-        System.out.println("Final:" + finalHash());
+        System.out.println("Final: " +  finalHash());
     }
 
     private String loadMessage() {
@@ -54,6 +54,17 @@ public class SHA {
 
             bytes = newBytes;
         }
+
+        long a = message.length() * 8;
+
+        ByteBuffer wrapper = ByteBuffer.allocate(Long.BYTES);
+        wrapper.putLong(a);
+
+        byte[] newBytes = new byte[bytes.length + wrapper.array().length];
+        System.arraycopy(bytes,0,newBytes,0, bytes.length);
+        System.arraycopy(wrapper.array(),0, newBytes,bytes.length, wrapper.array().length);
+
+        bytes = newBytes;
 
         return bytes;
     }
@@ -98,11 +109,9 @@ public class SHA {
     //Rozszerz szesnaście 32-bitowych słów na sześćdziesiąt cztery 32-bitowe słowa:
     private void extend32To64(List<Integer> list) {
 
-        System.out.println("Wywołanie funkcji");
         int s0, s1;
 
         for (int i = 16; i < 64; i++) {
-            System.out.println("i " + i);
             Integer w15 = list.get(i - 15);
             Integer w2 = list.get(i - 2);
 
@@ -119,7 +128,6 @@ public class SHA {
 
         makeHash(list);
     }
-
 
     private void makeHash(List<Integer> list) {
         int a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
@@ -152,8 +160,15 @@ public class SHA {
         h[7] = h[7] + hh;
     }
 
-    private int finalHash() {
-        int digest = h[0] + h[1] + h[2] + h[3] + h[4] + h[5] + h[6] + h[7];
+    private String finalHash() {
+        String digest = Integer.toHexString(h[0]) +
+                Integer.toHexString(h[1]) +
+                Integer.toHexString(h[3]) +
+                Integer.toHexString(h[3]) +
+                Integer.toHexString(h[4]) +
+                Integer.toHexString(h[5]) +
+                Integer.toHexString(h[6]) +
+                Integer.toHexString(h[7]);
 
         return digest;
     }
