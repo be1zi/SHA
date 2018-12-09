@@ -1,3 +1,4 @@
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,12 +28,14 @@ public class SHA {
         this.message = loadMessage();
         this.messageInBytes = basicChanges();
         make4BytesParts();
+        System.out.println("Final:" + finalHash());
     }
 
     private String loadMessage() {
         return "Test message bsadsadsasadsadsadssasasadsadsadsadsad lorem ipsum dolor sit amet";
     }
 
+    //Obróbka wstępna:
     private byte[] basicChanges() {
 
         boolean addedOne = false;
@@ -74,12 +77,84 @@ public class SHA {
     //dla  każdego kawałka
     //podziel kawałek na szesnaście 32-bitowych słów big-endian w [0..15]
     private void make4BytesParts() {
-        List<byte[]> list = make64BytesParts();
+        List<byte[]> list64Bytes = make64BytesParts();
+        List<Integer> list4Bytes;
+        byte[] bytesArray;
+        ByteBuffer wrapper;
 
+        for (byte[] bytes : list64Bytes) {
+            list4Bytes = new ArrayList<>();
+            for (int i = 0; i < bytes.length; i+=4) {
+                bytesArray = new byte[4];
+                System.arraycopy(bytes, i, bytesArray, 0, 4);
+                wrapper = ByteBuffer.wrap(bytesArray);
+                list4Bytes.add(wrapper.getInt());
+            }
 
-        for (byte[] bytes : list) {
+            extend32To64(list4Bytes);
+        }
+    }
 
+    //Rozszerz szesnaście 32-bitowych słów na sześćdziesiąt cztery 32-bitowe słowa:
+    private void extend32To64(List<Integer> list) {
+
+        System.out.println("Wywołanie funkcji");
+        int s0, s1;
+
+        for (int i = 16; i < 64; i++) {
+            System.out.println("i " + i);
+            Integer w15 = list.get(i - 15);
+            Integer w2 = list.get(i - 2);
+
+            s0 = Integer.rotateRight(w15, 7) ^
+                    Integer.rotateRight(w15, 18) ^
+                    w15 >>> 3;
+
+            s1 = Integer.rotateRight(w2, 17) ^
+                    Integer.rotateRight(w2, 19) ^
+                    w2 >>> 10;
+
+            list.add(i, list.get(i - 16) + s0 + list.get(i -7) + s1);
         }
 
+        makeHash(list);
+    }
+
+
+    private void makeHash(List<Integer> list) {
+        int a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
+        int s0, s1, ch, t1, maj, t2;
+
+        for (int i = 0; i < list.size(); i ++) {
+            s1 = Integer.rotateRight(e, 6) ^ Integer.rotateRight(e, 11) ^ Integer.rotateRight(e, 25);
+            ch = (e & f) ^ (~e & g);
+            t1 = hh + s1 + ch + k[i] + list.get(i);
+            s0 = Integer.rotateRight(a, 2) ^ Integer.rotateRight(a, 13) ^ Integer.rotateRight(a, 22);
+            maj = (a & b) ^ (a & c) ^ (b & c);
+            t2 = s0 + maj;
+
+            hh = g;
+            g = f;
+            e = d + t1;
+            d = c;
+            c = b;
+            b = a;
+            a = t1 + t2;
+        }
+
+        h[0] = h[0] + a;
+        h[1] = h[1] + b;
+        h[2] = h[2] + c;
+        h[3] = h[3] + d;
+        h[4] = h[4] + e;
+        h[5] = h[5] + f;
+        h[6] = h[6] + g;
+        h[7] = h[7] + hh;
+    }
+
+    private int finalHash() {
+        int digest = h[0] + h[1] + h[2] + h[3] + h[4] + h[5] + h[6] + h[7];
+
+        return digest;
     }
 }
