@@ -21,36 +21,35 @@ public class SHA {
     private byte[] messageInBytes;
 
     public static void main(String[] args) {
-        new SHA();
+        SHA sha = new SHA("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        System.out.println(sha.finalHash());
     }
 
     public SHA() {
-        this.message = loadMessage();
-        this.messageInBytes = basicChanges();
-        make4BytesParts();
-        System.out.println("Final: " +  finalHash());
+
     }
 
-    private String loadMessage() {
-        return "Test message bsadsadsasadsadsadssasasadsadsadsadsad lorem ipsum dolor sit amet";
+    public SHA(String message) {
+        this.message = message;
+        this.messageInBytes = basicChanges();
+        make4BytesParts();
     }
 
     //Obróbka wstępna:
     private byte[] basicChanges() {
 
-        boolean addedOne = false;
         byte[] bytes = message.getBytes();
 
-        while (bytes.length % 64 != 56) {
-            byte[] newBytes = new byte[bytes.length + 1];
-            System.arraycopy(bytes,0,newBytes,0, bytes.length);
+        byte[] newBytes = new byte[bytes.length + 1];
+        System.arraycopy(bytes,0,newBytes,0, bytes.length);
+        newBytes[newBytes.length - 1] = (byte) 0x80;
 
-            if (!addedOne) {
-                newBytes[newBytes.length - 1] = (byte) 0x80;
-                addedOne = true;
-            } else {
-                newBytes[newBytes.length - 1] = (byte) 0x00;
-            }
+        bytes = newBytes;
+
+        while (bytes.length % 64 != 56) {
+            newBytes = new byte[bytes.length + 1];
+            System.arraycopy(bytes,0,newBytes,0, bytes.length);
+            newBytes[newBytes.length - 1] = (byte) 0x00;
 
             bytes = newBytes;
         }
@@ -60,7 +59,7 @@ public class SHA {
         ByteBuffer wrapper = ByteBuffer.allocate(Long.BYTES);
         wrapper.putLong(a);
 
-        byte[] newBytes = new byte[bytes.length + wrapper.array().length];
+        newBytes = new byte[bytes.length + wrapper.array().length];
         System.arraycopy(bytes,0,newBytes,0, bytes.length);
         System.arraycopy(wrapper.array(),0, newBytes,bytes.length, wrapper.array().length);
 
@@ -143,6 +142,7 @@ public class SHA {
 
             hh = g;
             g = f;
+            f = e;
             e = d + t1;
             d = c;
             c = b;
@@ -163,7 +163,7 @@ public class SHA {
     private String finalHash() {
         String digest = Integer.toHexString(h[0]) +
                 Integer.toHexString(h[1]) +
-                Integer.toHexString(h[3]) +
+                Integer.toHexString(h[2]) +
                 Integer.toHexString(h[3]) +
                 Integer.toHexString(h[4]) +
                 Integer.toHexString(h[5]) +
